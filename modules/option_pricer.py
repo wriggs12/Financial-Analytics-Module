@@ -1,9 +1,24 @@
 import numpy as np
 import datetime
 import math
+from scipy.stats import norm
 
-def black_scholes():
-    pass
+def normal_dist(x):
+    prob = norm.cdf(x)
+    return prob
+
+def black_scholes(underlying_price, strike_price, time_to_expiration, risk_free_rate, volatility):
+    trajectory = np.log(underlying_price / strike_price)
+    variation = math.pow(volatility, 2) / 2
+    normalization = (volatility * math.pow(time_to_expiration, 0.5))
+
+    d1 = (trajectory + (risk_free_rate + variation) * time_to_expiration) / normalization
+    d2 = (trajectory + (risk_free_rate - variation) * time_to_expiration) / normalization
+
+    call_price = underlying_price * normal_dist(d1) - strike_price * math.exp(-risk_free_rate * time_to_expiration) * normal_dist(d2)
+    put_price = strike_price * math.exp(-risk_free_rate * time_to_expiration) * normal_dist(-d2) - underlying_price * normal_dist(-d1)
+
+    return (call_price, put_price)
 
 def monte_carlo(price_data):
     def calc_trajectory(price_data):
@@ -48,6 +63,6 @@ def monte_carlo(price_data):
         print(simulated_stock_prices)
         break
 
-
 if __name__ == '__main__':
-    monte_carlo([9, 7, 8, 4, 6, 5, 3])
+    # monte_carlo([9, 7, 8, 4, 6, 5, 3])
+    black_scholes(39, 40, 0.5, 0.1, 0.2)
