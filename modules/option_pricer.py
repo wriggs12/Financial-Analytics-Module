@@ -1,68 +1,125 @@
-import numpy as np
-import datetime
-import math
 from scipy.stats import norm
+import datetime
+import numpy as np
+import math
 
-def normal_dist(x):
-    prob = norm.cdf(x)
-    return prob
 
-def black_scholes(underlying_price, strike_price, time_to_expiration, risk_free_rate, volatility):
-    trajectory = np.log(underlying_price / strike_price)
-    variation = math.pow(volatility, 2) / 2
-    normalization = (volatility * math.pow(time_to_expiration, 0.5))
+class BlackScholes:
+    @staticmethod
+    def price_option(S, K, T, r, q, sigma, include_greeks=0, type=0):
+        if type not in [0, 1]:
+            return
 
-    d1 = (trajectory + (risk_free_rate + variation) * time_to_expiration) / normalization
-    d2 = (trajectory + (risk_free_rate - variation) * time_to_expiration) / normalization
+        d1 = (np.log(S / K) + (r - q + math.pow(sigma, 2) / 2) * T) / (
+            sigma * np.sqrt(T)
+        )
+        d2 = d1 - sigma * np.sqrt(T)
 
-    call_price = underlying_price * normal_dist(d1) - strike_price * math.exp(-risk_free_rate * time_to_expiration) * normal_dist(d2)
-    put_price = strike_price * math.exp(-risk_free_rate * time_to_expiration) * normal_dist(-d2) - underlying_price * normal_dist(-d1)
+        if type == 0:
+            price = S * math.exp(-q * T) * norm.cdf(d1) - K * math.exp(
+                -r * T
+            ) * norm.cdf(d2)
+        else:
+            price = K * math.exp(-r * T) * norm.cdf(-d2) - S * math.exp(
+                -q * T
+            ) * norm.cdf(-d1)
 
-    return (call_price, put_price)
+        if not bool(include_greeks):
+            return {"Price": price}
 
-def monte_carlo(price_data):
-    def calc_trajectory(price_data):
-        price_trajectory = []
-        
-        for i in range(len(price_data) - 1):
-            price_trajectory.append(np.log(price_data[i] / price_data[i+1]))
-        
-        return price_trajectory
+        delta = BlackScholes.calc_delta(d1, q, T, type)
+        gamma = BlackScholes.calc_gamma(d1, S, T, sigma, q)
+        theta = BlackScholes.calc_theta(d1, d2, S, K, T, r, sigma, q, type)
+        vega = BlackScholes.calc_vega(d1, S, T, q)
+        rho = BlackScholes.calc_rho(d2, K, T, r, type)
 
-    price_trajectory = calc_trajectory(price_data)
-    risk_free_rate = np.mean(price_trajectory)
-    variance = np.var(price_trajectory)
-    drift = risk_free_rate - 0.5*variance
+        return {
+            "Price": price,
+            "Delta": delta,
+            "Gamma": gamma,
+            "Theta": theta,
+            "Vega": vega,
+            "Rho": rho,
+        }
 
-    num_simulations = 1000
-    num_steps = 100
+    @staticmethod
+    def calc_delta(d1, q, T, type):
+        if type == 0:
+            return math.exp(-q * T) * norm.cdf(d1)
+        return math.exp(-q * T) * -norm.cdf(-d1)
 
-    strike_price = 0
-    stock_price = price_data[0]
-    market_price = 0
+    @staticmethod
+    def calc_gamma(d1, S, T, sigma, q):
+        return norm.pdf(d1) * math.exp(-q * T) / (S * sigma * np.sqrt(T))
 
-    matrurity_date = datetime.date(2025, 7, 20)
-    time_to_maturity = ((matrurity_date - datetime.date.today()).days + 1) / 365
+    @staticmethod
+    def calc_theta(d1, d2, S, K, T, r, sigma, q, type):
+        if type == 0:
+            return (
+                -((S * norm.pdf(d1) * sigma * math.exp(-q * T)) / (2 * np.sqrt(T)))
+                - r * K * math.exp(-r * T) * norm.cdf(d2)
+                + q * S * math.exp(-q * T) * norm.cdf(d1)
+            )
+        return (
+            -((S * norm.pdf(d1) * sigma * math.exp(-q * T)) / (2 * np.sqrt(T)))
+            + r * K * math.exp(-r * T) * norm.cdf(-d2)
+            - q * S * math.exp(-q * T) * norm.cdf(-d1)
+        )
 
-    dt = time_to_maturity / num_steps
+    @staticmethod
+    def calc_vega(d1, S, T, q):
+        return S * math.exp(-q * T) * norm.pdf(d1) * np.sqrt(T)
 
-    print(price_trajectory)
-    print(risk_free_rate)
-    print(variance)
-    print(drift)
+    @staticmethod
+    def calc_rho(d2, K, T, r, type):
+        if type == 0:
+            return K * T * np.exp(-r * T) * norm.cdf(d2)
+        return -K * T * np.exp(-r * T) * norm.cdf(-d2)
 
-    simulated_stock_prices = []
-    for _ in range(num_simulations):
-        step_stock_prices = []
-        for _ in range(num_steps):
-            random_input = math.sqrt(variance) * np.random.normal()
-            step_price = stock_price * math.exp(drift + random_input)
-            step_stock_prices.append(step_price)
-        simulated_price = np.mean(step_stock_prices)
-        simulated_stock_prices.append(simulated_price)
-        print(simulated_stock_prices)
-        break
 
-if __name__ == '__main__':
-    # monte_carlo([9, 7, 8, 4, 6, 5, 3])
-    black_scholes(39, 40, 0.5, 0.1, 0.2)
+class MonteCarlo:
+    def __init__(self):
+        pass
+
+    def monte_carlo(price_data):
+        def calc_trajectory(price_data):
+            price_trajectory = []
+
+            for i in range(len(price_data) - 1):
+                price_trajectory.append(np.log(price_data[i] / price_data[i + 1]))
+
+            return price_trajectory
+
+        price_trajectory = calc_trajectory(price_data)
+        risk_free_rate = np.mean(price_trajectory)
+        variance = np.var(price_trajectory)
+        drift = risk_free_rate - 0.5 * variance
+
+        num_simulations = 1000
+        num_steps = 100
+
+        strike_price = 0
+        stock_price = price_data[0]
+        market_price = 0
+
+        matrurity_date = datetime.date(2025, 7, 20)
+        time_to_maturity = ((matrurity_date - datetime.date.today()).days + 1) / 365
+
+        dt = time_to_maturity / num_steps
+
+        print(price_trajectory)
+        print(risk_free_rate)
+        print(variance)
+        print(drift)
+
+        simulated_stock_prices = []
+        for _ in range(num_simulations):
+            step_stock_prices = []
+            for _ in range(num_steps):
+                random_input = math.sqrt(variance) * np.random.normal()
+                step_price = stock_price * math.exp(drift + random_input)
+                step_stock_prices.append(step_price)
+            simulated_price = np.mean(step_stock_prices)
+            simulated_stock_prices.append(simulated_price)
+            print(simulated_stock_prices)
+            break
