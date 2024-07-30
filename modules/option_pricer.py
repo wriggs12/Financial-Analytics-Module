@@ -1,14 +1,16 @@
 from scipy.stats import norm
-import datetime
+from numpy.random import randn
+import matplotlib.pyplot as plt
 import numpy as np
 import math
 
 
+# Formulas defined here: https://www.columbia.edu/~mh2078/FoundationsFE/BlackScholes.pdf
 class BlackScholes:
     @staticmethod
     def price_option(S, K, T, r, q, sigma, include_greeks=0, type=0):
         if type not in [0, 1]:
-            return
+            raise Exception("Invalid Option Type")
 
         d1 = (np.log(S / K) + (r - q + math.pow(sigma, 2) / 2) * T) / (
             sigma * np.sqrt(T)
@@ -78,48 +80,28 @@ class BlackScholes:
 
 
 class MonteCarlo:
-    def __init__(self):
-        pass
+    @staticmethod
+    def monte_carlo(S, K, T, r, q, sigma, steps, N):
+        n = 10_000_000
+        p = 0.5
+        r1, r2, r3 = 0.2, 0.8, 0.4
+        s1, s2, s3 = 0.1, 0.05, 0.2
 
-    def monte_carlo(price_data):
-        def calc_trajectory(price_data):
-            price_trajectory = []
+        X_1 = np.exp(r1 + s1 * randn())
+        X_2 = np.exp(r2 + s2 * randn())
+        X_3 = np.exp(r3 + s3 * randn())
 
-            for i in range(len(price_data) - 1):
-                price_trajectory.append(np.log(price_data[i] / price_data[i + 1]))
+        S = (X_1 + X_2 + X_3) ** p
 
-            return price_trajectory
+        print(S.mean())
 
-        price_trajectory = calc_trajectory(price_data)
-        risk_free_rate = np.mean(price_trajectory)
-        variance = np.var(price_trajectory)
-        drift = risk_free_rate - 0.5 * variance
+        st = np.cumsum(np.random.normal(size=(100, 1000)), axis=0)
+        plt.plot(np.exp(st))
+        plt.xlabel("Time Increments")
+        plt.ylabel("Stock Price")
+        plt.title("Geometric Brownian Motion")
 
-        num_simulations = 1000
-        num_steps = 100
 
-        strike_price = 0
-        stock_price = price_data[0]
-        market_price = 0
-
-        matrurity_date = datetime.date(2025, 7, 20)
-        time_to_maturity = ((matrurity_date - datetime.date.today()).days + 1) / 365
-
-        dt = time_to_maturity / num_steps
-
-        print(price_trajectory)
-        print(risk_free_rate)
-        print(variance)
-        print(drift)
-
-        simulated_stock_prices = []
-        for _ in range(num_simulations):
-            step_stock_prices = []
-            for _ in range(num_steps):
-                random_input = math.sqrt(variance) * np.random.normal()
-                step_price = stock_price * math.exp(drift + random_input)
-                step_stock_prices.append(step_price)
-            simulated_price = np.mean(step_stock_prices)
-            simulated_stock_prices.append(simulated_price)
-            print(simulated_stock_prices)
-            break
+if __name__ == "__main__":
+    monte_carlo = MonteCarlo()
+    monte_carlo.monte_carlo(0, 0, 0, 0, 0, 0, 0, 0)

@@ -1,15 +1,16 @@
-from flask import Flask
-from flask import request
+from flask import Flask, request
+from flask_cors import CORS
 from modules.request_handler import RequestHandler
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route("/blackScholesPricing", methods=["GET"])
 def handle_black_scholes_request():
-    params = request.get_json()
+    params = request.args.to_dict()
     return RequestHandler.handle_black_scholes_calc_request(params)
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0', port=3000)
