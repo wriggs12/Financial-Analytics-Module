@@ -1,5 +1,4 @@
 from scipy.stats import norm
-from numpy.random import randn
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -81,27 +80,78 @@ class BlackScholes:
 
 class MonteCarlo:
     @staticmethod
-    def monte_carlo(S, K, T, r, q, sigma, steps, N):
-        n = 10_000_000
-        p = 0.5
-        r1, r2, r3 = 0.2, 0.8, 0.4
-        s1, s2, s3 = 0.1, 0.05, 0.2
+    def price_option(S, K, T, r, q, sigma, include_greeks=0, type=0):
+        price = MonteCarlo.monte_carlo(S, K, T, r, q, sigma, type)
 
-        X_1 = np.exp(r1 + s1 * randn())
-        X_2 = np.exp(r2 + s2 * randn())
-        X_3 = np.exp(r3 + s3 * randn())
+        if not bool(include_greeks):
+            return {"Price": price}
 
-        S = (X_1 + X_2 + X_3) ** p
+        delta, gamma = MonteCarlo.calc_delta_gamma(S, K, T, r, q, sigma, price, type)
+        theta = MonteCarlo.calc_theta(S, K, T, r, q, sigma, price, type)
+        vega = MonteCarlo.calc_vega(S, K, T, r, q, sigma, price, type)
+        rho = MonteCarlo.calc_rho(S, K, T, r, q, sigma, price, type)
 
-        print(S.mean())
+        return {
+            "Price": price,
+            "Delta": delta,
+            "Gamma": gamma,
+            "Theta": theta,
+            "Vega": vega,
+            "Rho": rho,
+        }
 
-        st = np.cumsum(np.random.normal(size=(100, 1000)), axis=0)
-        plt.plot(np.exp(st))
-        plt.xlabel("Time Increments")
-        plt.ylabel("Stock Price")
-        plt.title("Geometric Brownian Motion")
+    @staticmethod
+    def monte_carlo(
+        S, K, T, r, q, sigma, type=0, num_simulations=100000, num_steps=252
+    ):
+        dt = T / num_steps
+        nudt = (r - q - 0.5 * sigma**2) * dt
+        sigsdt = sigma * np.sqrt(dt)
+
+        Z = np.random.normal(0, 1, (num_simulations, num_steps))
+        S_T = S * np.exp(np.cumsum(nudt + sigsdt * Z, axis=1))
+
+        if type == 0:
+            payoffs = np.maximum(S_T[:, -1] - K, 0)
+        else:
+            payoffs = np.maximum(K - S_T[:, -1], 0)
+
+        return np.exp(-r * T) * np.mean(payoffs)
+
+    @staticmethod
+    def calc_delta_gamma(S, K, T, r, q, sigma, price, type):
+        delta_S = 0.01 * S
+
+        price_up = MonteCarlo.monte_carlo(S + delta_S, K, T, r, q, sigma, type)
+        price_down = MonteCarlo.monte_carlo(S - delta_S, K, T, r, q, sigma, type)
+
+        delta = (price_up - price_down) / (2 * delta_S)
+        gamma = (price_up + price_down - 2 * price) / (delta_S**2)
+
+        return delta, gamma
+
+    @staticmethod
+    def calc_theta(S, K, T, r, q, sigma, price, type):
+        delta_T = 1 / 365
+        price_T_down = MonteCarlo.monte_carlo(S, K, T - delta_T, r, q, sigma, type)
+        return (price_T_down - price) / delta_T
+
+    @staticmethod
+    def calc_vega(S, K, T, r, q, sigma, price, type):
+        delta_sigma = 0.01
+        price_vol_up = MonteCarlo.monte_carlo(S, K, T, r, q, sigma + delta_sigma, type)
+        return (price_vol_up - price) / delta_sigma
+
+    @staticmethod
+    def calc_rho(S, K, T, r, q, sigma, price, type):
+        delta_r = 0.01
+        price_r_up = MonteCarlo.monte_carlo(S, K, T, r + delta_r, q, sigma, type)
+        return (price_r_up - price) / delta_r
 
 
 if __name__ == "__main__":
     monte_carlo = MonteCarlo()
-    monte_carlo.monte_carlo(0, 0, 0, 0, 0, 0, 0, 0)
+    print(monte_carlo.price_option(100, 100, 1, 0.05, 0.02, 0.2, 1, 0))
+
+    black_scholes = BlackScholes()
+    print(black_scholes.price_option(100, 100, 1, 0.05, 0.02, 0.2, 1, 0))
