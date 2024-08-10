@@ -1,9 +1,9 @@
-from .option_pricer import BlackScholes
+from .option_pricer import BlackScholes, MonteCarlo
 
 
 class RequestHandler:
     @staticmethod
-    def handle_black_scholes_calc_request(request):
+    def parse_arguments(request):
         try:
             S = float(request.get("stock_price"))
             K = float(request.get("strike_price"))
@@ -15,10 +15,22 @@ class RequestHandler:
             option_type = int(request.get("option_type"))
 
             if not S or not K or not T or not r or not q or not sigma:
-                raise Exception("Missing Parameters")
+                raise Exception("All parameters must be provided and non-zero")
+        except (TypeError, ValueError) as e:
+            raise Exception(f"Invalid Input: {e}")
 
-            return BlackScholes.price_option(
-                S, K, T, r, q, sigma, include_greeks, option_type
-            )
+        return S, K, T, r, q, sigma, include_greeks, option_type
+
+    @staticmethod
+    def handle_black_scholes_calc_request(request):
+        try:
+            return BlackScholes.price_option(*RequestHandler.parse_arguments(request))
+        except Exception as e:
+            return f"Failed to price option: {e}"
+
+    @staticmethod
+    def handle_monte_carlo_calc_request(request):
+        try:
+            return MonteCarlo.price_option(*RequestHandler.parse_arguments(request))
         except Exception as e:
             return f"Failed to price option: {e}"
