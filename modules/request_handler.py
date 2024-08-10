@@ -24,7 +24,7 @@ class RequestHandler:
     @staticmethod
     def handle_black_scholes_calc_request(request):
         try:
-            return BlackScholes.price_option(*RequestHandler.parse_arguments(request))
+            return BlackScholes.price_option(*RequestHandler.parse_arguments(request)) asfhsjgdhjklhsgdjkfghjksdfgjkgdfjksgddjkfghsj,dghfjkh
         except Exception as e:
             return f"Failed to price option: {e}"
 
