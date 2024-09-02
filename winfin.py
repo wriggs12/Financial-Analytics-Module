@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, request
 from flask_cors import CORS
 from modules.request_handler import RequestHandler
@@ -19,4 +21,5 @@ def handle_monte_carlo_request():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+    port = int(os.environ.get("PORT", 3000))
+    app.run(host="0.0.0.0", port=port)

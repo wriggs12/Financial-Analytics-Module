@@ -5,4 +5,4 @@ services:
     volumes:
       - .:/workdir
     ports:
-      - '3000:3000'
+      - "3000:3000"
