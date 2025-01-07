@@ -1,8 +1,239 @@
+from enum import Enum
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 import numpy as np
 import math
 
+
+
+class OptionType(Enum):
+    PUT = 0
+    CALL = 1
+
+
+def bisection(f, a, b, tol=0.1, maxiter=10):
+    n = 0
+    while n < maxiter:
+        c = (a + b) * 0.5
+        if f(c) == 0 or abs(a - b) * 0.5 < tol:
+            return c, n
+
+        n += 1
+        if f(c) < 0:
+            a = c
+        else:
+            b = c
+
+    return c, n
+
+
+# Formulas defined here: http://naneport.arg.in.th/books/ComputerIT/Mastering%20Python%20for%20Finance.pdf
+class StockOption:
+    def __init__(
+        self,
+        S: float,
+        K: float,
+        T: float = 1,
+        N: float = 2,
+        r: float = 0.05,
+        q: float = 0.0,
+        pu: float = 0.0,
+        pd: float = 0.0,
+        sigma: float = 0.0,
+        option_type: OptionType = OptionType.CALL,
+        is_european: bool = False,
+    ):
+        """
+        :param S: initial stock price
+        :param K: strike price
+        :param T: time to maturity
+        :param N: number of time steps
+        :param r: risk-free rate
+        :param q: dividend yield
+        :param pu: probability at up state
+        :param pd: probability at down state
+        :param sigma: volatility
+        :param type: option type
+        """
+
+        self.S = S
+        self.K = K
+        self.T = T
+        self.N = N
+        self.r = r
+        self.q = q
+        self.pu = pu
+        self.pd = pd
+        self.sigma = sigma
+        self.option_type = option_type
+        self.is_european = is_european
+
+    @property
+    def dt(self):
+        return self.T / self.N
+
+    @property
+    def df(self):
+        return math.exp(-(self.r - self.q) * self.dt)
+
+
+class BinomialTreeOption(StockOption):
+    def init_params(self):
+        self.u = 1 + self.pu
+        self.d = 1 - self.pd
+        self.qu = (math.exp((self.r - self.q) * self.dt) - self.d) / (self.u - self.d)
+        self.qd = 1 - self.qu
+
+    def init_stock_price_tree(self):
+        self.STs = [np.array([self.S])]
+
+        for _ in range(self.N):
+            prev_branches = self.STs[-1]
+            st = np.concatenate((prev_branches * self.u, [prev_branches[-1] * self.d]))
+            self.STs.append(st)
+
+    def init_payoffs_tree(self):
+        if self.option_type is OptionType.CALL:
+            return np.maximum(0, self.STs[self.N] - self.K)
+        else:
+            return np.maximum(0, self.K - self.STs[self.N])
+
+    def check_early_exercise(self, payoffs, node):
+        if self.option_type is OptionType.CALL:
+            return np.maximum(payoffs, self.STs[node] - self.K)
+        else:
+            return np.maximum(payoffs, self.K - self.STs[node])
+
+    def traverse_tree(self, payoffs):
+
+        for i in reversed(range(self.N)):
+            payoffs = (payoffs[:-1] * self.qu + payoffs[1:] * self.qd) * self.df
+
+            if not self.is_european:
+                payoffs = self.check_early_exercise(payoffs, i)
+
+        return payoffs
+
+    def price(self):
+        self.init_params()
+        self.init_stock_price_tree()
+        payoffs = self.traverse_tree(self.init_payoffs_tree())
+        return payoffs[0]
+
+
+class BinomialLROption(BinomialTreeOption):
+    def init_params(self):
+        odd_N = self.N if (self.N % 2 == 0) else (self.N + 1)
+        d1 = (
+            math.log(self.S / self.K)
+            + ((self.r - self.q) + (self.sigma**2) / 2) * self.T
+        ) / (self.sigma * math.sqrt(self.T))
+        d2 = (
+            math.log(self.S / self.K)
+            + ((self.r - self.q) - (self.sigma**2) / 2) * self.T
+        ) / (self.sigma * math.sqrt(self.T))
+
+        pbar = self.pp_2_inversion(d1, odd_N)
+        self.p = self.pp_2_inversion(d2, odd_N)
+        self.u = 1 / self.df * pbar / self.p
+        self.d = (1 / self.df - self.p * self.u) / (1 - self.p)
+        self.qu = self.p
+        self.qd = 1 - self.p
+
+    def pp_2_inversion(self, z, n):
+        return 0.5 + math.copysign(1, z) * math.sqrt(
+            0.25
+            - 0.25
+            * math.exp(
+                -((z / (n + 1.0 / 3.0 + 0.1 / (n + 1.0))) ** 2.0) * (n + 1.0 / 6.0)
+            )
+        )
+
+
+class ImpliedVolatilityModel:
+    def __init__(self, S, r=0.05, T=1, q=0, N=1, option_type=OptionType.CALL):
+        self.S = S
+        self.r = r
+        self.T = T
+        self.q = q
+        self.N = N
+        self.option_type = option_type
+
+    def option_valuation(self, K, sigma):
+        lr_option = BinomialLROption(
+            S=self.S,
+            K=K,
+            T=self.T,
+            N=self.N,
+            r=self.r,
+            option_type=self.option_type,
+            sigma=sigma,
+        )
+        return lr_option.price()
+
+    def get_implied_volatilities(self, strikes, opt_price):
+        imp_vols = []
+
+        for i, strike in enumerate(strikes):
+            f = lambda sigma: self.option_valuation(strike, sigma) - opt_price[i]
+            imp_vol = bisection(f, 0.01, 0.99, 0.0001, 100)[0]
+            imp_vols.append(imp_vol)
+
+        return imp_vols
+
+
+eu_option = BinomialLROption(
+    S=50,
+    K=52,
+    T=2,
+    N=4,
+    r=0.05,
+    sigma=0.3,
+    option_type=OptionType.PUT,
+    is_european=True,
+)
+
+print(f"European Put: {eu_option.price()}")
+
+am_option = BinomialLROption(
+    S=50,
+    K=52,
+    T=2,
+    N=4,
+    r=0.05,
+    sigma=0.3,
+    option_type=OptionType.PUT,
+    is_european=False,
+)
+
+print(f"American Put: {am_option.price()}")
+
+strikes = [75, 80, 85, 90, 92.5, 95, 97.5, 100, 105, 110, 115, 120, 125]
+put_prices = [
+    0.16,
+    0.32,
+    0.6,
+    1.22,
+    1.77,
+    2.54,
+    3.55,
+    4.8,
+    7.75,
+    11.8,
+    15.96,
+    20.75,
+    25.81,
+]
+
+model = ImpliedVolatilityModel(
+    99.62, r=0.0248, T=78 / 365, q=0.0182, N=77, option_type=OptionType.PUT
+)
+imp_vols_put = model.get_implied_volatilities(strikes, put_prices)
+
+plt.plot(strikes, imp_vols_put)
+plt.xlabel("Strike Prices")
+plt.ylabel("Implied Volatilities")
+plt.show()
 
 # Formulas defined here: https://www.columbia.edu/~mh2078/FoundationsFE/BlackScholes.pdf
 class BlackScholes:
@@ -147,11 +378,3 @@ class MonteCarlo:
         delta_r = 0.01
         price_r_up = MonteCarlo.monte_carlo(S, K, T, r + delta_r, q, sigma, type)
         return (price_r_up - price) / delta_r
-
-
-if __name__ == "__main__":
-    monte_carlo = MonteCarlo()
-    print(monte_carlo.price_option(100, 100, 1, 0.05, 0.02, 0.2, 1, 0))
-
-    black_scholes = BlackScholes()
-    print(black_scholes.price_option(100, 100, 1, 0.05, 0.02, 0.2, 1, 0))
