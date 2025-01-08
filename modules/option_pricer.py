@@ -182,59 +182,6 @@ class ImpliedVolatilityModel:
         return imp_vols
 
 
-eu_option = BinomialLROption(
-    S=50,
-    K=52,
-    T=2,
-    N=4,
-    r=0.05,
-    sigma=0.3,
-    option_type=OptionType.PUT,
-    is_european=True,
-)
-
-print(f"European Put: {eu_option.price()}")
-
-am_option = BinomialLROption(
-    S=50,
-    K=52,
-    T=2,
-    N=4,
-    r=0.05,
-    sigma=0.3,
-    option_type=OptionType.PUT,
-    is_european=False,
-)
-
-print(f"American Put: {am_option.price()}")
-
-strikes = [75, 80, 85, 90, 92.5, 95, 97.5, 100, 105, 110, 115, 120, 125]
-put_prices = [
-    0.16,
-    0.32,
-    0.6,
-    1.22,
-    1.77,
-    2.54,
-    3.55,
-    4.8,
-    7.75,
-    11.8,
-    15.96,
-    20.75,
-    25.81,
-]
-
-model = ImpliedVolatilityModel(
-    99.62, r=0.0248, T=78 / 365, q=0.0182, N=77, option_type=OptionType.PUT
-)
-imp_vols_put = model.get_implied_volatilities(strikes, put_prices)
-
-plt.plot(strikes, imp_vols_put)
-plt.xlabel("Strike Prices")
-plt.ylabel("Implied Volatilities")
-plt.show()
-
 # Formulas defined here: https://www.columbia.edu/~mh2078/FoundationsFE/BlackScholes.pdf
 class BlackScholes:
     @staticmethod
