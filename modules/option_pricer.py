@@ -187,21 +187,21 @@ class BlackScholes:
     @staticmethod
     def price_option(S, K, T, r, q, sigma, include_greeks=0, type=0):
         if type not in [0, 1]:
-            raise Exception("Invalid Option Type")
+            raise Exception("Invalid Option Type: Must be 0 (put) or 1 (call)")
 
-        d1 = (np.log(S / K) + (r - q + math.pow(sigma, 2) / 2) * T) / (
-            sigma * np.sqrt(T)
+        sqrt_T = np.sqrt(T)
+        exp_neg_qT = math.exp(-q * T)
+        exp_neg_rT = math.exp(-r * T)
+
+        d1 = (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (
+            sigma * sqrt_T
         )
-        d2 = d1 - sigma * np.sqrt(T)
+        d2 = d1 - sigma * sqrt_T
 
         if type == 0:
-            price = S * math.exp(-q * T) * norm.cdf(d1) - K * math.exp(
-                -r * T
-            ) * norm.cdf(d2)
+            price = S * exp_neg_qT * norm.cdf(d1) - K * exp_neg_rT * norm.cdf(d2)
         else:
-            price = K * math.exp(-r * T) * norm.cdf(-d2) - S * math.exp(
-                -q * T
-            ) * norm.cdf(-d1)
+            price = K * exp_neg_rT  * norm.cdf(-d2) - S * exp_neg_qT * norm.cdf(-d1)
 
         if not bool(include_greeks):
             return {"Price": price}
@@ -325,3 +325,6 @@ class MonteCarlo:
         delta_r = 0.01
         price_r_up = MonteCarlo.monte_carlo(S, K, T, r + delta_r, q, sigma, type)
         return (price_r_up - price) / delta_r
+
+
+print(BlackScholes.price_option(50, 52, 1.2, 0.03, 0.01, 0.2, 0, 1))
