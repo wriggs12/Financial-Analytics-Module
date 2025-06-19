@@ -1,5 +1,8 @@
-Flask==3.0.3
-numpy==1.26.4
-scipy==1.11.4
+Flask
+numpy
+scipy
 flask_cors
 matplotlib
+pytest
+ruff
+isort

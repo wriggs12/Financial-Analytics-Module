@@ -1,5 +1,6 @@
-from modules.option_pricer import BlackScholes
 import pytest
+
+from modules.option_pricer import BlackScholes
 
 STOCK_PRICE = 10.24
 STRIKE_PRICE = 10.27

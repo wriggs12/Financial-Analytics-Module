@@ -14,17 +14,17 @@ double calc_present_value(const std::vector<double> &cash_flows, const std::vect
     return present_value;
 }
 
-// Σ (Exposure_t * Default Probability_t * Loss Given Default * Discount Factor_t)
-double calc_cva(const std::vector<double> &exposures, const std::vector<double> &probabilities, const std::vector<double> &discount_factors, double lgd)
+// CVA = -LGD * ∑ (EE(t) * PD(t-1, t))
+double calc_cva(const std::vector<double> &exposures, const std::vector<double> &probabilities, double lgd)
 {
     double cva = 0.0;
 
     for (size_t i = 0; i < exposures.size(); ++i)
     {
-        cva += exposures[i] * probabilities[i] * lgd * discount_factors[i];
+        cva += exposures[i] * probabilities[i];
     }
 
-    return cva;
+    return cva * -lgd;
 }
 
 int main()
@@ -59,7 +59,7 @@ int main()
     double mtm = floating_leg_pv - fixed_leg_pv;
 
     std::vector<double> exposures(discount_factors.size(), mtm / discount_factors.size());
-    double cva = calc_cva(exposures, probabilities, discount_factors, lgd);
+    double cva = calc_cva(exposures, probabilities, lgd);
 
     std::cout << "Fixed Leg Present Value: " << fixed_leg_pv << std::endl;
     std::cout << "Floating Leg Present Value: " << floating_leg_pv << std::endl;

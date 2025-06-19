@@ -1,9 +1,9 @@
+import math
 from enum import Enum
-from scipy.stats import norm
+
 import matplotlib.pyplot as plt
 import numpy as np
-import math
-
+from scipy.stats import norm
 
 
 class OptionType(Enum):
@@ -105,7 +105,6 @@ class BinomialTreeOption(StockOption):
             return np.maximum(payoffs, self.K - self.STs[node])
 
     def traverse_tree(self, payoffs):
-
         for i in reversed(range(self.N)):
             payoffs = (payoffs[:-1] * self.qu + payoffs[1:] * self.qd) * self.df
 
@@ -193,15 +192,13 @@ class BlackScholes:
         exp_neg_qT = math.exp(-q * T)
         exp_neg_rT = math.exp(-r * T)
 
-        d1 = (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (
-            sigma * sqrt_T
-        )
+        d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * sqrt_T)
         d2 = d1 - sigma * sqrt_T
 
         if type == 0:
             price = S * exp_neg_qT * norm.cdf(d1) - K * exp_neg_rT * norm.cdf(d2)
         else:
-            price = K * exp_neg_rT  * norm.cdf(-d2) - S * exp_neg_qT * norm.cdf(-d1)
+            price = K * exp_neg_rT * norm.cdf(-d2) - S * exp_neg_qT * norm.cdf(-d1)
 
         if not bool(include_greeks):
             return {"Price": price}
@@ -325,6 +322,3 @@ class MonteCarlo:
         delta_r = 0.01
         price_r_up = MonteCarlo.monte_carlo(S, K, T, r + delta_r, q, sigma, type)
         return (price_r_up - price) / delta_r
-
-
-print(BlackScholes.price_option(50, 52, 1.2, 0.03, 0.01, 0.2, 0, 1))

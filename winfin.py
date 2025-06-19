@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, request
 from flask_cors import CORS
+
 from modules.request_handler import RequestHandler
 
 app = Flask(__name__)

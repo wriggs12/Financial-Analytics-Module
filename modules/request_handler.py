@@ -1,4 +1,4 @@
-from .option_pricer import BlackScholes, MonteCarlo
+from modules.option_pricer import BlackScholes, MonteCarlo
 
 
 class RequestHandler:
@@ -17,7 +17,7 @@ class RequestHandler:
             if not S or not K or not T or not r or not q or not sigma:
                 raise Exception("All parameters must be provided and non-zero")
         except (TypeError, ValueError) as e:
-            raise Exception(f"Invalid Input: {e}")
+            raise Exception(f"Invalid Input: [{e}]")
 
         return S, K, T, r, q, sigma, include_greeks, option_type
 
@@ -26,11 +26,11 @@ class RequestHandler:
         try:
             return BlackScholes.price_option(*RequestHandler.parse_arguments(request))
         except Exception as e:
-            return f"Failed to price option: {e}"
+            return f"Failed to price option with error: {e}"
 
     @staticmethod
     def handle_monte_carlo_calc_request(request):
         try:
             return MonteCarlo.price_option(*RequestHandler.parse_arguments(request))
         except Exception as e:
-            return f"Failed to price option: {e}"
+            return f"Failed to price option with error: {e}"
