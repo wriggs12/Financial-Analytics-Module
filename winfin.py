@@ -21,6 +21,12 @@ def handle_monte_carlo_request():
     return RequestHandler.handle_monte_carlo_calc_request(params)
 
 
+@app.route("/fetchEquityData", methods=["GET"])
+def handle_equity_data_request():
+    params = request.args.to_dict()
+    return RequestHandler.handle_equity_data_request(params)
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
     app.run(host="0.0.0.0", port=port)

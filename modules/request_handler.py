@@ -1,5 +1,4 @@
-from modules.option_pricer import BlackScholes, MonteCarlo
-
+from modules import option_pricer, finnhub_accessor
 
 class RequestHandler:
     @staticmethod
@@ -24,13 +23,21 @@ class RequestHandler:
     @staticmethod
     def handle_black_scholes_calc_request(request):
         try:
-            return BlackScholes.price_option(*RequestHandler.parse_arguments(request))
+            return option_pricer.BlackScholes.price_option(*RequestHandler.parse_arguments(request))
         except Exception as e:
             return f"Failed to price option with error: {e}"
 
     @staticmethod
     def handle_monte_carlo_calc_request(request):
         try:
-            return MonteCarlo.price_option(*RequestHandler.parse_arguments(request))
+            return option_pricer.MonteCarlo.price_option(*RequestHandler.parse_arguments(request))
         except Exception as e:
             return f"Failed to price option with error: {e}"
+
+    @staticmethod
+    def handle_equity_data_request(request):
+        try:
+            ticker = request.get("ticker")
+            return finnhub_accessor.fetch_stock_data_bulk(ticker)
+        except Exception as e:
+            return f"Failed to fetch data with error: {e}"
