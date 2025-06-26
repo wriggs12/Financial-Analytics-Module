@@ -1,4 +1,5 @@
-from modules import option_pricer, finnhub_accessor
+from modules import finnhub_accessor, option_pricer
+
 
 class RequestHandler:
     @staticmethod
@@ -23,14 +24,18 @@ class RequestHandler:
     @staticmethod
     def handle_black_scholes_calc_request(request):
         try:
-            return option_pricer.BlackScholes.price_option(*RequestHandler.parse_arguments(request))
+            return option_pricer.BlackScholes.price_option(
+                *RequestHandler.parse_arguments(request)
+            )
         except Exception as e:
             return f"Failed to price option with error: {e}"
 
     @staticmethod
     def handle_monte_carlo_calc_request(request):
         try:
-            return option_pricer.MonteCarlo.price_option(*RequestHandler.parse_arguments(request))
+            return option_pricer.MonteCarlo.price_option(
+                *RequestHandler.parse_arguments(request)
+            )
         except Exception as e:
             return f"Failed to price option with error: {e}"
 

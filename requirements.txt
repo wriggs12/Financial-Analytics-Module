@@ -3,9 +3,6 @@ numpy
 scipy
 flask_cors
 matplotlib
-pytest
-ruff
-isort
 requests
 dotenv
 finnhub-python
