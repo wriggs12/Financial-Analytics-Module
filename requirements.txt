@@ -8,3 +8,4 @@ ruff
 isort
 requests
 dotenv
+finnhub-python

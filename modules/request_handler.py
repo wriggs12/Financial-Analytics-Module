@@ -37,7 +37,7 @@ class RequestHandler:
     @staticmethod
     def handle_equity_data_request(request):
         try:
-            ticker = request.get("ticker")
+            ticker = request.get("ticker").split(",")
             return finnhub_accessor.fetch_stock_data_bulk(ticker)
         except Exception as e:
             return f"Failed to fetch data with error: {e}"

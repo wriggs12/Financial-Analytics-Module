@@ -1,17 +1,14 @@
 from dotenv import load_dotenv
-import requests
 import os
+import finnhub
 
 load_dotenv()
 
-def fetch_stock_data(ticker: str):
-    response = requests.get(f"https://finnhub.io/api/v1/quote?symbol={ticker}&token={os.environ.get("API_KEY")}")
-    return response.json()
-
+client = finnhub.Client(api_key=os.environ.get("FINNHUB_API_KEY"))
 
 def fetch_stock_data_bulk(tickers: list[str]):
     data = [
-        fetch_stock_data(ticker)
+        client.quote(ticker)
         for ticker in tickers
     ]
 
