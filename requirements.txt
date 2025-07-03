@@ -2,6 +2,7 @@ Flask
 numpy
 scipy
 flask_cors
+flask_limiter
 matplotlib
 requests
 dotenv
