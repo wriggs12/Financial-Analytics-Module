@@ -1,5 +1,15 @@
+#ifndef OPTION_PRICER_H
+#define OPTION_PRICE_H
+
 class Option
 {
+public:
+    enum OptionType
+    {
+        PUT = 0,
+        CALL = 1
+    };
+
 private:
     double _stock_price;
     double _strike_price;
@@ -7,10 +17,10 @@ private:
     double _volatility;
     double _dividend_yield;
     double _time_to_expiration;
-    int _option_type;
+    OptionType _option_type;
 
 public:
-    Option(double spot, double strike, double rate, double vol, double div, double time, int type);
+    Option(double spot, double strike, double rate, double vol, double div, double time, OptionType type);
 
     double stock_price() const;
     double strike_price() const;
@@ -18,7 +28,7 @@ public:
     double volatility() const;
     double dividend_yield() const;
     double time_to_expiration() const;
-    int option_type() const;
+    OptionType option_type() const;
 
     double price_scholes();
 };
@@ -33,3 +43,5 @@ private:
 public:
     static double price_option(const Option &option);
 };
+
+#endif

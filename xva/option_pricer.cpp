@@ -4,7 +4,7 @@
 
 #include "option_pricer.h"
 
-Option::Option(double spot, double strike, double time, double rate, double div, double vol, int type)
+Option::Option(double spot, double strike, double time, double rate, double div, double vol, OptionType type)
 {
     if (type != 0 && type != 1)
         throw std::invalid_argument("Invalid Option Type!");
@@ -24,7 +24,7 @@ double Option::risk_free_rate() const { return _risk_free_rate; }
 double Option::volatility() const { return _volatility; }
 double Option::dividend_yield() const { return _dividend_yield; }
 double Option::time_to_expiration() const { return _time_to_expiration; }
-int Option::option_type() const { return _option_type; }
+Option::OptionType Option::option_type() const { return _option_type; }
 
 double Option::price_scholes()
 {
@@ -57,7 +57,7 @@ double BlackScholes::price_option(const Option &option)
 
     double price;
 
-    if (option.option_type() == 0)
+    if (option.option_type() == Option::OptionType::PUT)
         price = option.stock_price() *
                     std::exp(-option.dividend_yield() * option.time_to_expiration()) *
                     BlackScholes::norm_cdf(d1) -
@@ -77,7 +77,7 @@ double BlackScholes::price_option(const Option &option)
 
 int main()
 {
-    Option option(50, 52, 1.2, 0.03, 0.01, 0.2, 1);
+    Option option(50, 52, 1.2, 0.03, 0.01, 0.2, Option::OptionType::CALL);
     std::cout << option.price_scholes() << std::endl;
     return 0;
 }

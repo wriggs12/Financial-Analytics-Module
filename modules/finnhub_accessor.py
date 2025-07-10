@@ -6,7 +6,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = finnhub.Client(api_key=os.environ.get("FINNHUB_API_KEY"))
-
+print(client.quote("SPY"))
+print(client.quote("NDAQ"))
+print(client.quote("VXX"))
+print(client.quote("BTC"))
 
 def fetch_stock_data_bulk(tickers: list[str]):
     data = []

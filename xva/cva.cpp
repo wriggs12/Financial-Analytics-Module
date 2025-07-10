@@ -63,13 +63,8 @@ int main()
 
     std::cout << "Fixed Leg Present Value: " << fixed_leg_pv << std::endl;
     std::cout << "Floating Leg Present Value: " << floating_leg_pv << std::endl;
-    std::cout << "MTM Value of Interest Rate Swap: " << mtm << std::endl;
+    std::cout << "MTM: " << mtm << std::endl;
     std::cout << "CVA: " << cva << std::endl;
-
-    std::cout << "Exposures: ";
-    for (const auto &e : exposures)
-        std::cout << e << " ";
-    std::cout << std::endl;
 
     return 0;
 }
