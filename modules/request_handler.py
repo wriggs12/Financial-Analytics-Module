@@ -14,7 +14,14 @@ class RequestHandler:
             include_greeks = int(request.get("include_greeks"))
             option_type = int(request.get("option_type"))
 
-            if not S or not K or not T or not r or not q or not sigma:
+            if (
+                S is None
+                or K is None
+                or T is None
+                or r is None
+                or q is None
+                or sigma is None
+            ):
                 raise Exception("All parameters must be provided and non-zero")
         except (TypeError, ValueError) as e:
             raise Exception(f"Invalid Input: [{e}]")

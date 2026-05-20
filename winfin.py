@@ -13,6 +13,7 @@ app = Flask(__name__)
 limiter = Limiter(get_remote_address, app=app, default_limits=["100 per minute"])
 CORS(app, resources={r"/*": {"origins": FRONTEND_ORIGIN}})
 
+
 @app.route("/blackScholesPricing", methods=["GET"])
 @limiter.limit("10 per minute")
 def handle_black_scholes_request():
